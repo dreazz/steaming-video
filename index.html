@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <button id="start">start</button>
+    <button id="stop">stop</button>
+    <video id="preview" width="160" height="120" autoplay muted></video>
+    <video id="recording" width="160" height="120" controls></video>
+    <script>
+        let start = document.getElementById("start")
+        let stopButton = document.getElementById("stop")
+        let preview = document.getElementById("preview")
+        let recording = document.getElementById("recording");
+        
+        function stop(stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        function startRecording(stream) {
+            console.log("IAM HERE")
+            let recorder = new MediaRecorder(stream);
+            let data = [];
+
+            recorder.start();
+            recorder.ondataavailable = event => data.push(event.data);
+
+
+            let stopped = new Promise((resolve, reject) => {
+                recorder.onstop = resolve;
+                recorder.onerror = event => reject(event.name);
+            });
+            let recorded
+            //stop de recording
+            stopButton.addEventListener("click", () => {
+                stop(preview.srcObject);
+                recorded = recorder.stop()
+            }, false);
+
+            return Promise.all([
+                stopped, recorded
+            ])
+                .then(() => data);
+        }
+        start.addEventListener("click", function () {
+            navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            }).then(stream => {
+                preview.srcObject = stream;
+                // downloadButton.href = stream;
+                preview.captureStream = preview.captureStream || preview.mozCaptureStream;
+                return new Promise(resolve => preview.onplaying = resolve);
+            }).then(() => startRecording(preview.captureStream()))
+                .then(recordedChunks => {
+                    let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
+                    recording.src = URL.createObjectURL(recordedBlob);
+                    // downloadButton.href = recording.src;
+                    // downloadButton.download = "RecordedVideo.webm";
+                    console.log(recordedBlob, "recorded blob")
+
+                    console.log("Successfully recorded " + recordedBlob.size + " bytes of " +
+                        recordedBlob.type + " media.");
+                })
+                .catch(err => console.log(err));
+        }, false);
+
+
+    </script>
+</body>
+
+</html>
