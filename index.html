@@ -13,12 +13,13 @@
     <button id="stop">stop</button>
     <video id="preview" width="160" height="120" autoplay muted></video>
     <video id="recording" width="160" height="120" controls></video>
+    <a id="downloadButton">download</a>
     <script>
         let start = document.getElementById("start")
         let stopButton = document.getElementById("stop")
         let preview = document.getElementById("preview")
         let recording = document.getElementById("recording");
-        
+        let downloadButton = document.getElementById("downloadButton");
         function stop(stream) {
             stream.getTracks().forEach(track => track.stop());
         }
@@ -53,15 +54,16 @@
                 audio: true
             }).then(stream => {
                 preview.srcObject = stream;
-                // downloadButton.href = stream;
+                downloadButton.href = stream;
                 preview.captureStream = preview.captureStream || preview.mozCaptureStream;
                 return new Promise(resolve => preview.onplaying = resolve);
             }).then(() => startRecording(preview.captureStream()))
                 .then(recordedChunks => {
                     let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
                     recording.src = URL.createObjectURL(recordedBlob);
-                    // downloadButton.href = recording.src;
-                    // downloadButton.download = "RecordedVideo.webm";
+                    console.log("asdasdasd", recording.src)
+                    downloadButton.href = recording.src;
+                    downloadButton.download = "RecordedVideo.webm";
                     console.log(recordedBlob, "recorded blob")
 
                     console.log("Successfully recorded " + recordedBlob.size + " bytes of " +
